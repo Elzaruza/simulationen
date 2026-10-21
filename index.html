@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulationen</title>
+  <meta name="description" content="Sammlung interaktiver HTML-Simulationen">
+  <style>
+    :root {
+      --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #5b6475;
+      --accent: #2f6fde; --border: #e2e5eb; --shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #14171d; --card: #1d212a; --text: #e8ebf1; --muted: #9aa3b5;
+              --accent: #6b9bff; --border: #2b3140; --shadow: none; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--text); line-height: 1.5; }
+    header { max-width: 1100px; margin: 0 auto; padding: 48px 20px 16px; }
+    h1 { margin: 0 0 6px; font-size: 2rem; }
+    header p { margin: 0; color: var(--muted); }
+    .search { margin-top: 20px; width: 100%; max-width: 360px; padding: 10px 14px; font-size: 1rem;
+              border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px 20px 48px;
+           display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+    .card { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--border);
+            border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit;
+            box-shadow: var(--shadow); transition: transform .15s, border-color .15s; }
+    .card:hover, .card:focus-visible { transform: translateY(-3px); border-color: var(--accent); outline: none; }
+    .thumb { aspect-ratio: 16 / 9; display: grid; place-items: center; font-size: 2.6rem;
+             background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .body { padding: 14px 16px 18px; }
+    .body h2 { margin: 0 0 4px; font-size: 1.1rem; }
+    .body p { margin: 0; color: var(--muted); font-size: .93rem; }
+    .tag { display: inline-block; margin-top: 10px; font-size: .78rem; padding: 2px 8px;
+           border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+    /* Seitenaufbau */
+    .content { max-width: 1100px; margin: 0 auto; }
+    /* Platz für die Ko-fi-Lasche, wenn das Fenster nur wenig breiter als der Inhalt ist */
+    @media (min-width: 701px) and (max-width: 1200px) { .content { padding-right: 36px; } }
+
+    /* Ko-fi: schmale, vertikale Lasche am rechten Rand, die beim Scrollen stehen bleibt */
+    .support { position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 50;
+               writing-mode: vertical-rl; display: flex; align-items: center; gap: 8px;
+               padding: 16px 9px; background: var(--accent); color: #fff; text-decoration: none;
+               font-weight: 600; font-size: .9rem; letter-spacing: .03em;
+               border-radius: 10px 0 0 10px; box-shadow: -2px 2px 8px rgba(0,0,0,.15);
+               transition: padding .15s, filter .15s; }
+    .support:hover, .support:focus-visible { padding-right: 13px; filter: brightness(1.1); outline: none; }
+    .support-icon { writing-mode: horizontal-tb; font-size: 1.05rem; line-height: 1; }
+    /* Auf dem Handy wäre die Lasche im Weg: dort als kleiner Button über dem Footer */
+    @media (max-width: 700px) {
+      .support { position: static; transform: none; writing-mode: horizontal-tb; width: max-content;
+                 margin: 0 auto 28px; padding: 10px 18px; border-radius: 99px; }
+      .support:hover, .support:focus-visible { padding-right: 18px; }
+    }
+    .feedback { margin: 8px 20px 28px; padding: 24px; background: var(--card);
+                border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+    .feedback h2 { margin: 0 0 4px; font-size: 1.15rem; }
+    .feedback > p { margin: 0 0 18px; color: var(--muted); font-size: .95rem; }
+    .fb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .fb-full { grid-column: 1 / -1; }
+    .feedback label { display: block; font-size: .88rem; font-weight: 600; margin-bottom: 5px; }
+    .feedback label .opt { font-weight: 400; color: var(--muted); }
+    .feedback input[type=text], .feedback input[type=email], .feedback select, .feedback textarea {
+      width: 100%; padding: 10px 12px; font: inherit; font-size: .95rem; color: var(--text);
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+    .feedback textarea { min-height: 130px; resize: vertical; }
+    .feedback input:focus, .feedback select:focus, .feedback textarea:focus {
+      outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); border-color: var(--accent); }
+    .fb-consent { display: flex; gap: 10px; align-items: flex-start; font-size: .88rem; color: var(--muted); }
+    .fb-consent input { margin-top: 3px; flex: none; }
+    .fb-consent a { color: var(--accent); }
+    .fb-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+    .fb-btn { padding: 11px 22px; border: 0; border-radius: 10px; background: var(--accent); color: #fff;
+              font: inherit; font-weight: 600; cursor: pointer; transition: filter .15s; }
+    .fb-btn:hover, .fb-btn:focus-visible { filter: brightness(1.1); }
+    .fb-btn:disabled { opacity: .6; cursor: wait; }
+    .fb-status { font-size: .92rem; }
+    .fb-status.ok { color: #1f9d55; } .fb-status.err { color: #d64545; }
+    .fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 0 20px 32px; }
+    footer a { color: inherit; }
+    .empty { grid-column: 1 / -1; color: var(--muted); }
+  </style>
+</head>
+<body>
+ <div class="layout">
+ <div class="content">
+  <header>
+    <h1>Simulationen</h1>
+    <p>Interaktive Simulationen zum Ausprobieren – einfach eine Kachel anklicken.</p>
+    <input class="search" type="search" placeholder="Simulation suchen …" aria-label="Simulation suchen">
+  </header>
+
+  <main id="liste">
+    <!--
+      ====== HIER DEINE SIMULATIONEN EINTRAGEN ======
+      Pro Simulation einen <a class="card">-Block kopieren und anpassen:
+        href   = Pfad zur Datei (z. B. simulationen/pendel.html)
+        Symbol = ein Emoji ODER ein Vorschaubild: <img src="bilder/pendel.png" alt="">
+        h2     = Titel, p = kurze Beschreibung, tag = Thema
+    -->
+
+    <a class="card" href="simulationen/ionisierungsenergien.html">
+      <div class="thumb">🌀</div>
+      <div class="body">
+        <h2>Ionisierungsenergie</h2>
+        <p>Finde mehr über die Hülle des Atoms heraus.</p>
+        <span class="tag">Chemie</span>
+      </div>
+    </a>
+
+    <a class="card" href="simulationen/atombaukasten.html">
+      <div class="thumb">📈</div>
+      <div class="body">
+        <h2>Atombaukasten</h2>
+        <p>Lerne den Bau von Atomen und Isotopen genauer kennen.</p>
+        <span class="tag">Chemie</span>
+      </div>
+    </a>
+
+    <a class="card" href="simulationen/bindungslabor.html">
+      <div class="thumb">🧪</div>
+      <div class="body">
+        <h2>Bindungslabor</h2>
+        <p>Entdecke, was die Atome zusammenhält und was bei chemischen Reaktionen passiert.</p>
+        <span class="tag">Chemie</span>
+      </div>
+    </a>
+
+    <a class="card" href="simulationen/vanderwaal.html">
+      <div class="thumb">🧪</div>
+      <div class="body">
+        <h2>Van-der-Waals-Labor</h2>
+        <p>Über Kontaktflächen, Anziehungskräfte und Siedetemperaturen.</p>
+        <span class="tag">Chemie</span>
+      </div>
+    </a>
+
+    <p class="empty" hidden>Keine Simulation gefunden.</p>
+  </main>
+
+  <!-- ====== FEEDBACK-FORMULAR ======
+       Versand über Web3Forms (web3forms.com). Einmalig:
+       1. Auf web3forms.com kostenlos registrieren und ein Formular anlegen (Ziel-E-Mail = deine Adresse).
+       2. Den angezeigten "Access Key" unten bei value="DEIN_ACCESS_KEY" einsetzen.
+       Der Access Key ist laut Web3Forms öffentlich und darf im Quelltext stehen. -->
+  <section class="feedback" id="feedback" aria-labelledby="fb-title">
+    <h2 id="fb-title">Feedback, Fehler oder Ideen?</h2>
+    <p>Etwas funktioniert nicht, eine Simulation könnte besser sein oder du wünschst dir eine neue? Schreib mir.</p>
+
+    <form id="fb-form" novalidate>
+      <input type="hidden" name="access_key" value="779ccbf5-8a0d-45c2-8454-0502aa36b21f">
+      <input type="hidden" name="subject" value="">
+      <input type="hidden" name="from_name" value="Simulationen – Feedback">
+      <!-- Spam-Falle: für Menschen unsichtbar, Bots füllen sie aus -->
+      <div class="fb-hp" aria-hidden="true"><input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off"></div>
+
+      <div class="fb-grid">
+        <div>
+          <label for="fb-type">Art der Rückmeldung</label>
+          <select id="fb-type" name="Art" required>
+            <option value="Feedback">Feedback</option>
+            <option value="Fehler">Fehler melden</option>
+            <option value="Vorschlag">Neue Simulation vorschlagen</option>
+          </select>
+        </div>
+        <div>
+          <label for="fb-sim">Betrifft Simulation</label>
+          <select id="fb-sim" name="Simulation">
+            <!-- wird automatisch aus den Kacheln oben befüllt -->
+          </select>
+        </div>
+        <div>
+          <label for="fb-name">Name <span class="opt">(optional)</span></label>
+          <input id="fb-name" type="text" name="name" autocomplete="name" maxlength="100">
+        </div>
+        <div>
+          <label for="fb-email">E-Mail für Rückfragen <span class="opt">(optional)</span></label>
+          <input id="fb-email" type="email" name="email" autocomplete="email" maxlength="150">
+        </div>
+        <div class="fb-full">
+          <label for="fb-msg">Deine Nachricht</label>
+          <textarea id="fb-msg" name="message" required maxlength="5000"
+            placeholder="Was ist dir aufgefallen? Bei Fehlern hilft: Was hast du gemacht, was ist passiert, welches Gerät/welcher Browser?"></textarea>
+        </div>
+        <div class="fb-full fb-consent">
+          <input id="fb-consent" type="checkbox" required>
+          <label for="fb-consent" style="font-weight:400;margin:0">Ich bin einverstanden, dass meine Angaben zur Bearbeitung meiner Nachricht über den Dienst Web3Forms an den Betreiber dieser Seite übermittelt werden. Details in der <a href="impressum.html#datenschutz">Datenschutzerklärung</a>.</label>
+        </div>
+        <div class="fb-full fb-actions">
+          <button class="fb-btn" type="submit">Absenden</button>
+          <span class="fb-status" id="fb-status" role="status" aria-live="polite"></span>
+        </div>
+      </div>
+    </form>
+  </section>
+
+ </div><!-- Ende .content -->
+
+  <!-- ====== UNTERSTÜTZEN (Ko-fi) ======
+       DEINNAME in der Adresse durch deinen Ko-fi-Namen ersetzen (steht in deinem Ko-fi-Profil: ko-fi.com/…).
+       Bewusst ein einfacher Link statt des Ko-fi-Widgets: so lädt die Seite nichts von fremden Servern,
+       solange niemand auf den Button klickt (datenschutzfreundlich, keine Cookie-Abfrage nötig). -->
+  <a class="support" href="https://ko-fi.com/elzaruza" target="_blank" rel="noopener"
+     title="Auf Ko-fi unterstützen (öffnet neuen Tab)" aria-label="Auf Ko-fi unterstützen (öffnet neuen Tab)">
+    <span class="support-icon" aria-hidden="true">☕</span><span>Spenden via Ko-fi</span>
+  </a>
+ </div><!-- Ende .layout -->
+
+  <footer>
+    © 2026 ·
+    <a href="impressum.html">Impressum</a> ·
+    <a href="impressum.html#datenschutz">Datenschutz</a>
+  </footer>
+
+  <script>
+    // Einfache Suche: filtert Kacheln nach Titel, Beschreibung und Thema
+    const input = document.querySelector('.search');
+    const cards = [...document.querySelectorAll('.card')];
+    const empty = document.querySelector('.empty');
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      let shown = 0;
+      cards.forEach(c => {
+        const hit = c.textContent.toLowerCase().includes(q);
+        c.hidden = !hit; if (hit) shown++;
+      });
+      empty.hidden = shown > 0;
+    });
+
+    // ===== Feedback-Formular =====
+    const form = document.getElementById('fb-form');
+    const typeSel = document.getElementById('fb-type');
+    const simSel = document.getElementById('fb-sim');
+    const statusEl = document.getElementById('fb-status');
+    const btn = form.querySelector('.fb-btn');
+
+    // Auswahlliste der Simulationen aus den Kacheln erzeugen
+    const addOpt = (v) => { const o = document.createElement('option'); o.value = o.textContent = v; simSel.append(o); };
+    addOpt('Allgemein / ganze Seite');
+    cards.forEach(c => addOpt(c.querySelector('h2').textContent.trim()));
+    addOpt('– (neue Simulation)');
+
+    typeSel.addEventListener('change', () => {
+      if (typeSel.value === 'Vorschlag') simSel.value = '– (neue Simulation)';
+      else if (simSel.value === '– (neue Simulation)') simSel.selectedIndex = 0;
+    });
+
+    const setStatus = (msg, cls) => { statusEl.textContent = msg; statusEl.className = 'fb-status ' + (cls || ''); };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!form.message.value.trim()) { setStatus('Bitte schreib eine Nachricht.', 'err'); form.message.focus(); return; }
+      if (form.email.value && !form.email.checkValidity()) { setStatus('Die E-Mail-Adresse sieht nicht gültig aus.', 'err'); form.email.focus(); return; }
+      if (!document.getElementById('fb-consent').checked) { setStatus('Bitte bestätige die Datenschutz-Einwilligung.', 'err'); return; }
+      if (form.access_key.value === 'DEIN_ACCESS_KEY') { setStatus('Formular noch nicht eingerichtet (Access Key fehlt).', 'err'); return; }
+
+      form.subject.value = `[Simulationen] ${typeSel.value}: ${simSel.value}`;
+      const data = Object.fromEntries(new FormData(form));
+      if (!data.email) delete data.email;   // leeres Feld nicht mitschicken
+      if (!data.name) delete data.name;
+
+      btn.disabled = true; setStatus('Wird gesendet …');
+      try {
+        const res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json.success) {
+          form.reset(); simSel.selectedIndex = 0;
+          setStatus('Danke! Deine Nachricht ist angekommen.', 'ok');
+        } else {
+          setStatus('Senden fehlgeschlagen. Bitte später erneut versuchen.', 'err');
+        }
+      } catch {
+        setStatus('Keine Verbindung. Bitte später erneut versuchen.', 'err');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
