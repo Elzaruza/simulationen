@@ -1,0 +1,915 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>GC-Labor Kohlenwasserstoffe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Gerätepult. Links Probenvorbereitung, rechts das Gerät (Ofen) und darunter der Schreiber (Chromatogramm), unten Auswertung und Sprachhilfen. */
+:root{
+  --bg:#EEF2F0; --panel:#FFFFFF; --ink:#17201E; --muted:#56635F; --line:#D3DBD8;
+  --accent:#0E6B71; --accent-ink:#FFFFFF; --flame:#D97A06; --grid:#E2E8E5; --soft:#F6F8F7;
+  --ok:#1B7F4B; --bad:#B4382A; --oven:#E4EAE7; --film:#E9C77A;
+  --s1:#2F6FD6; --s2:#DD7A12; --s3:#18946F; --s4:#C4468F; --s5:#7E57CF; --s6:#CF4636; --s7:#128FAE; --s8:#7E8F12;
+  --f-display:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-data:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1514; --panel:#172120; --ink:#E4ECE9; --muted:#9AA9A4; --line:#2A3633;
+  --accent:#3DB3B9; --accent-ink:#06191A; --flame:#F2A43A; --grid:#1F2B29; --soft:#1B2624;
+  --ok:#4CC488; --bad:#F07A6A; --oven:#1C2826; --film:#7A6330;
+  --s1:#6EA2F5; --s2:#F2A04A; --s3:#47C59D; --s4:#E57BB7; --s5:#A88BEA; --s6:#F07B6B; --s7:#4DC0DC; --s8:#B7C746;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1514; --panel:#172120; --ink:#E4ECE9; --muted:#9AA9A4; --line:#2A3633;
+  --accent:#3DB3B9; --accent-ink:#06191A; --flame:#F2A43A; --grid:#1F2B29; --soft:#1B2624;
+  --ok:#4CC488; --bad:#F07A6A; --oven:#1C2826; --film:#7A6330;
+  --s1:#6EA2F5; --s2:#F2A04A; --s3:#47C59D; --s4:#E57BB7; --s5:#A88BEA; --s6:#F07B6B; --s7:#4DC0DC; --s8:#B7C746;
+  color-scheme:dark}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{white-space:nowrap;flex:none;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;background:transparent;padding:9px 16px;font-weight:700;color:var(--muted);margin-bottom:-1px}
+.tabs button[aria-selected="true"]{background:var(--panel);border-color:var(--line);color:var(--ink)}
+.tabpanel{display:grid;gap:18px;min-width:0}
+[hidden]{display:none!important}
+.viewbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pill{border-radius:999px;padding:5px 12px;font-size:.88rem;background:transparent}
+.pill[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.seg{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.seg button{font-size:.85rem;padding:4px 10px;border-radius:6px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg .cnt{font-family:var(--f-data);font-size:.75rem;margin-left:4px;opacity:.8}
+.slist{max-height:420px;overflow-y:auto;margin-top:6px;border-top:1px solid var(--line);padding-top:4px}
+.chip button{border:none;background:transparent;padding:0 0 0 4px;font-size:1rem;line-height:1;color:var(--muted)}
+#simGrid.noprobe{grid-template-columns:minmax(0,1fr)}
+.devgrid{grid-template-areas:"gc chart" "pred res"}
+.devgrid.nogc{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);grid-template-areas:"chart chart" "pred res"}
+.a-gc{grid-area:gc}.a-chart{grid-area:chart}.a-pred{grid-area:pred}.a-res{grid-area:res}
+.subpanel{border-top:1px solid var(--line);padding-top:10px;min-width:0}
+.subpanel h3{margin:0 0 6px}
+@media (max-width:1180px){.devgrid,.devgrid.nogc{grid-template-columns:minmax(0,1fr);grid-template-areas:"gc" "chart" "pred" "res"}}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1560px;margin:0 auto;display:grid;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+h1{font-family:var(--f-display);font-size:clamp(1.5rem,3vw,2rem);margin:0;line-height:1.15;text-wrap:balance}
+.sub{color:var(--muted);margin:2px 0 0;max-width:62ch}
+h2{font-size:1.1rem;margin:0 0 10px;text-wrap:balance}
+h3{font-size:.95rem;margin:14px 0 6px}
+.lbl{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.grid{display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.stack{display:grid;gap:18px;min-width:0}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer;border-radius:7px;border:1px solid var(--line);background:var(--soft);padding:7px 12px;line-height:1.2}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700;padding:10px 16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.presets button{font-size:.85rem;padding:5px 9px}
+.group{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
+.group summary{cursor:pointer;font-weight:700;padding:4px 0;list-style:revert}
+.subst{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;align-items:center;padding:5px 4px;border-radius:6px}
+.subst:hover{background:var(--soft)}
+.subst input{width:18px;height:18px;accent-color:var(--accent)}
+.subst .nm{font-weight:700}
+.subst .meta{grid-column:2/4;font-size:.82rem;color:var(--muted);font-family:var(--f-data)}
+.subst .bp{font-family:var(--f-data);font-size:.82rem;color:var(--muted)}
+.est{font-size:.7rem;border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-left:4px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 4px;font-size:.88rem;background:var(--soft)}
+.dot{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;font-family:var(--f-data);font-size:.75rem;font-weight:500;color:#fff;flex:none}
+.method{display:grid;gap:8px}
+.method label{display:flex;gap:8px;align-items:center}
+.method input[type=range]{flex:1;accent-color:var(--accent)}
+.readout{display:flex;flex-wrap:wrap;gap:10px}
+.lcd{font-family:var(--f-data);background:var(--soft);border:1px solid var(--line);border-radius:7px;padding:6px 10px;min-width:118px}
+.lcd b{display:block;font-size:1.25rem;font-weight:500;font-variant-numeric:tabular-nums}
+.lcd span{font-size:.72rem;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.speed button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+canvas{display:block;width:100%;max-width:100%}
+.cv-col{height:290px;border-radius:8px;background:var(--soft)}
+.cv-chart{height:290px;border-radius:8px;background:var(--panel)}
+.devgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:start}
+@media (max-width:1180px){.devgrid{grid-template-columns:minmax(0,1fr)}.cv-col{height:300px}}
+.figure{display:grid;gap:6px;min-width:0}
+.figure .row{justify-content:space-between}
+.amounts{display:grid;gap:8px;margin-top:8px}
+.amount{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;align-items:center}
+.amount .nm{font-size:.92rem;min-width:0}
+.amount input{grid-column:1/3;accent-color:var(--accent);width:100%}
+.amount .val{font-family:var(--f-data);font-size:.82rem;color:var(--muted);grid-column:2;text-align:right}
+details.opt>summary{cursor:pointer;font-weight:700;font-size:1.05rem}
+.cv-zoom{height:210px;border-radius:8px;background:var(--soft)}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;margin:10px 0 0;font-size:.92rem}
+.facts dt{color:var(--muted)} .facts dd{margin:0}
+.zgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.zcard{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:6px;min-width:0;background:var(--panel)}
+.zhead{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 8px;align-items:center;min-height:3.1em}
+.zhead .num{grid-column:2;font-size:.82rem}
+.zcard .facts dd{white-space:nowrap}
+.zlegend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.88rem;color:var(--muted)}
+.zlegend span{display:inline-flex;align-items:center;gap:6px}
+.zlegend i{display:inline-block;flex:none}
+.lg-gas{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.lg-ch3{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--muted);background:var(--soft)}
+.lg-bar{width:22px;height:5px;background:var(--s1)}
+.lg-vdw{width:22px;border-top:2px dashed var(--s1)}
+.bar{display:inline-block;width:64px;height:9px;border-radius:5px;background:var(--grid);vertical-align:middle;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--accent)}
+.steps{margin:0;padding-left:22px;display:grid;gap:8px;max-width:80ch}
+
+.note{font-size:.88rem;color:var(--muted);margin:6px 0 0}
+.callout{border-left:4px solid var(--flame);background:var(--soft);padding:8px 12px;border-radius:0 8px 8px 0;font-size:.95rem}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.num{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+.tblwrap{overflow-x:auto}
+.pred{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.pred li{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--soft)}
+.pred li .pos{font-family:var(--f-data);width:1.6em;color:var(--muted)}
+.pred li .n{flex:1;min-width:0}
+.pred li button{padding:2px 8px}
+.pred li.ok{border-color:var(--ok)} .pred li.no{border-color:var(--bad)}
+.mark{font-weight:700;font-size:.85rem}
+.mark.ok{color:var(--ok)} .mark.no{color:var(--bad)}
+.task{font-size:1rem}
+.words{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px 18px;font-size:.92rem}
+.words div b{display:block}
+.sent{display:grid;gap:6px;font-size:.95rem}
+.sent div{background:var(--soft);border:1px dashed var(--line);border-radius:6px;padding:6px 10px}
+.blank{display:inline-block;min-width:5ch;border-bottom:1.5px solid var(--muted)}
+.term{text-decoration:underline dotted;text-underline-offset:3px}
+.toggle{display:flex;gap:8px;align-items:center;font-size:.92rem}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.warn{color:var(--bad);font-weight:700}
+ul.limits{margin:0;padding-left:20px;display:grid;gap:4px;font-size:.92rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="lbl">Simulation · Gaschromatographie mit unpolarer Trennsäule</div>
+      <h1>GC-Labor: Kohlenwasserstoffe trennen</h1>
+      <p class="sub">Stelle ein Stoffgemisch aus Kohlenwasserstoffen (C3 bis C8) zusammen, spritze es in den Gaschromatographen ein und beobachte, wie die Stoffe durch die Trennsäule wandern. Der Schreiber zeichnet dabei das Chromatogramm auf.</p>
+    </div>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Bereiche">
+    <button role="tab" id="tabbtn-sim" aria-controls="tab-sim" aria-selected="true">Simulation</button>
+    <button role="tab" id="tabbtn-zoom" aria-controls="tab-zoom" aria-selected="false">Blick in die Säule</button>
+    <button role="tab" id="tabbtn-lit" aria-controls="tab-lit" aria-selected="false">Literaturwerte</button>
+  </nav>
+  <div id="tab-sim" role="tabpanel" aria-labelledby="tabbtn-sim" class="tabpanel">
+
+  <div class="viewbar" role="group" aria-label="Bereiche ein- und ausblenden">
+    <span class="lbl">Einblenden</span>
+    <button type="button" class="pill" data-view="probe" aria-pressed="true">Probe &amp; Einstellungen</button>
+    <button type="button" class="pill" data-view="geraet" aria-pressed="true">Gaschromatograph</button>
+    <button type="button" class="pill" data-view="auftrag" aria-pressed="true">Auftrag</button>
+    <button type="button" class="pill" data-view="saetze" aria-pressed="false">Satzbausteine</button>
+    <button type="button" class="pill" data-view="woerter" aria-pressed="false">Wortspeicher</button>
+    <button type="button" class="pill" data-view="grenzen" aria-pressed="false">Modellgrenzen</button>
+  </div>
+
+  <div class="grid" id="simGrid">
+    <!-- Probenvorbereitung -->
+    <aside class="stack" id="v-probe">
+      <section class="panel" aria-labelledby="h-mix">
+        <h2 id="h-mix">1 · Probe zusammenstellen</h2>
+        <div class="lbl">Fertige Gemische</div>
+        <div class="row presets" id="presets" style="margin-top:6px"></div>
+
+        <div class="lbl" style="margin-top:14px">Im Gemisch <span id="selCount"></span></div>
+        <div class="chips" id="selChips" style="margin-top:6px"></div>
+        <div class="row" style="margin-top:8px">
+          <button type="button" class="pill" id="btnAmounts" aria-pressed="false">Anteile anpassen</button>
+        </div>
+        <div id="amountWrap" hidden>
+          <p class="note">Mehr Stoff ergibt einen Peak mit größerer Fläche.</p>
+          <div class="amounts" id="amountList"></div>
+          <div class="row" style="margin-top:8px"><button type="button" id="btnEqual">Alle gleich</button></div>
+        </div>
+
+        <div class="lbl" style="margin-top:14px">Stoffe hinzufügen</div>
+        <div class="seg" id="groupSeg" role="group" aria-label="Stoffklasse"></div>
+        <label class="toggle" for="bpToggle" style="margin-top:8px"><input type="checkbox" id="bpToggle"> Siedetemperaturen anzeigen</label>
+        <div id="substList" class="slist"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-meth">
+        <h2 id="h-meth">2 · Messbedingungen</h2>
+        <div class="method">
+          <label for="modeProg"><input type="radio" name="mode" id="modeProg" value="prog" checked> Temperaturprogramm: 40 °C (2 min), dann +10 °C pro Minute</label>
+          <label for="modeIso"><input type="radio" name="mode" id="modeIso" value="iso"> Konstante Temperatur</label>
+          <label for="isoT" class="row" style="padding-left:26px"><input type="range" id="isoT" min="30" max="150" step="5" value="60" disabled> <span class="lcd" style="min-width:auto;padding:2px 8px"><span id="isoTv">60 °C</span></span></label>
+          <div class="lbl" style="margin-top:6px">Detektor</div>
+          <label for="detSimple"><input type="radio" name="det" id="detSimple" value="simple" checked> Vereinfacht: Fläche ∝ Stoffmenge</label>
+          <label for="detFid"><input type="radio" name="det" id="detFid" value="fid"> Realistisch (FID): Fläche ∝ Stoffmenge × C-Atome</label>
+          <p class="note" id="methodNote">Säule: 30 m, unpolar (Polydimethylsiloxan) · Trägergas: Helium</p>
+        </div>
+      </section>
+    </aside>
+
+    <main class="stack">
+      <section class="panel" aria-labelledby="h-dev">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <div class="row">
+            <h2 id="h-dev" style="margin:0 8px 0 0">3 · Messung</h2>
+            <div class="readout" aria-live="off">
+              <div class="lcd"><span>Laufzeit</span><b id="roTime">00:00</b></div>
+              <div class="lcd"><span>Ofen</span><b id="roTemp">40 °C</b></div>
+              <div class="lcd"><span>Status</span><b id="roState" style="font-size:1rem;padding-top:4px">bereit</b></div>
+            </div>
+          </div>
+          <div class="row">
+            <button class="primary" id="btnStart">Probe einspritzen</button>
+            <button id="btnPause" disabled>Pause</button>
+            <button id="btnReset">Zurücksetzen</button>
+            <div class="row speed" role="group" aria-label="Zeitraffer">
+              <button data-speed="1" aria-pressed="true">Echtzeit</button>
+              <button data-speed="5" aria-pressed="false">5×</button>
+              <button data-speed="20" aria-pressed="false">20×</button>
+              <button data-speed="60" aria-pressed="false">60×</button>
+            </div>
+          </div>
+        </div>
+        <p class="callout task" id="v-auftrag" style="margin:0 0 12px"><b>Auftrag:</b> <span id="taskText"></span></p>
+
+        <div class="devgrid" id="devgrid">
+          <div class="figure a-gc" id="v-geraet">
+            <div class="lbl">Gaschromatograph</div>
+            <canvas id="cvCol" class="cv-col" role="img" aria-label="Schema des Gaschromatographen: Einspritzblock, aufgewickelte Trennsäule im Ofen und Detektor. Farbige Zonen zeigen, wo sich die Stoffe in der Säule befinden."></canvas>
+            <p class="note">Farbige Zonen: Hier sind die Stoffe gerade in der Säule (Breite vergrößert).</p>
+          </div>
+          <div class="figure a-chart">
+            <div class="row"><span class="lbl" id="h-chart">Chromatogramm</span>
+              <label class="toggle" for="nameToggle" title="Erst nach „Zuordnung aufdecken“ möglich"><input type="checkbox" id="nameToggle" disabled> Stoffnamen an den Peaks</label></div>
+            <canvas id="cvChart" class="cv-chart" role="img" aria-label="Chromatogramm: Detektorsignal gegen die Zeit in Minuten. Die gestrichelte Linie zeigt die Ofentemperatur. Ein Klick auf einen Peak bestimmt seine Fläche."></canvas>
+            <p class="note"><b>Klicke auf einen Peak</b>, um seine Fläche zu bestimmen. Gestrichelt: Ofentemperatur. t<sub>M</sub>: Totzeit.</p>
+          </div>
+
+          <div class="subpanel a-pred" aria-labelledby="h-pred">
+            <h3 id="h-pred">Vorhersage</h3>
+            <p class="note" style="margin-top:0">Ordne die Stoffe vor dem Einspritzen. Oben steht der Stoff, der zuerst ankommt.</p>
+            <ol class="pred" id="predList"></ol>
+            <p id="predResult" class="task" style="margin:8px 0 0"></p>
+          </div>
+          <div class="subpanel a-res" aria-labelledby="h-res">
+            <h3 id="h-res">Zuordnung und Peakflächen</h3>
+            <div class="tblwrap"><table>
+              <thead><tr><th>Peak</th><th>t<sub>R</sub></th><th>Peakfläche</th><th>Stoff(e)</th></tr></thead>
+              <tbody id="resBody"><tr><td colspan="4" class="note">Die Peaks erscheinen hier, sobald der Detektor sie aufgezeichnet hat.</td></tr></tbody>
+            </table></div>
+            <p class="note" id="detNote"></p>
+            <div class="row" style="margin-top:8px"><button id="btnReveal" disabled>Zuordnung aufdecken</button><button id="btnIntAll" type="button">Alle Peaks integrieren</button></div>
+          </div>
+        </div>
+      </section>
+  <section class="panel" id="v-saetze" aria-labelledby="h-sent" hidden>
+    <div>
+      <h2 id="h-sent">Satzbausteine</h2>
+      <div class="sent">
+        <div><b>Je</b> größer die Kontaktfläche eines Moleküls ist, <b>desto</b> <span class="blank"></span> sind die Van-der-Waals-Kräfte.</div>
+        <div>Der Stoff <span class="blank"></span> hat eine längere Retentionszeit als <span class="blank"></span>, <b>weil</b> <span class="blank"></span>.</div>
+        <div>Der Stoff <span class="blank"></span> hält sich länger in der stationären Phase auf, <b>da</b> <span class="blank"></span>.</div>
+        <div>Meine Vorhersage war richtig / falsch. <b>Ich vermute, dass</b> <span class="blank"></span>.</div>
+        <div><span class="blank"></span> und <span class="blank"></span> sind Isomere. Sie haben die gleiche Summenformel, <b>aber</b> <span class="blank"></span>.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="v-woerter" aria-labelledby="h-words" hidden>
+    <h2 id="h-words">Wortspeicher</h2>
+    <div class="words">
+      <div><b>der Gaschromatograph</b>Gerät, das gasförmige Stoffgemische in einzelne Stoffe trennt.</div>
+      <div><b>die Trennsäule, die Trennsäulen</b>Dünnes, langes Rohr (hier 30 m), aufgewickelt im Ofen. Innen ist sie mit der stationären Phase beschichtet.</div>
+      <div><b>die mobile Phase (das Trägergas)</b>Gas, das durch die Säule strömt und die Stoffe mitnimmt. Hier: Helium.</div>
+      <div><b>die stationäre Phase</b>Dünne Schicht an der Innenwand der Säule. Sie bewegt sich nicht. Hier ist sie unpolar.</div>
+      <div><b>die Retentionszeit, die Retentionszeiten</b>Zeit vom Einspritzen bis zum Peak. Abkürzung: t<sub>R</sub>.</div>
+      <div><b>die Totzeit</b>Zeit, die ein Stoff braucht, der gar nicht festgehalten wird. Abkürzung: t<sub>M</sub>.</div>
+      <div><b>der Peak, die Peaks</b>Spitze im Chromatogramm. Ein Peak zeigt: Ein Stoff kommt am Detektor an.</div>
+      <div><b>der Detektor</b>Messgerät am Ende der Säule. Er erzeugt ein Signal, wenn ein Stoff ankommt.</div>
+      <div><b>die Van-der-Waals-Kräfte</b>Schwache Anziehungskräfte zwischen unpolaren Molekülen. Sie sind stärker, wenn Moleküle mehr Elektronen und eine größere Kontaktfläche haben.</div>
+      <div><b>die Kontaktfläche</b>Teil der Moleküloberfläche, mit dem ein Molekül andere Teilchen berühren kann.</div>
+      <div><b>verzweigt / unverzweigt</b>Ein verzweigtes Molekül hat Seitenketten. Es ist kompakter als ein unverzweigtes.</div>
+      <div><b>die Stoffmenge</b>Anzahl der Teilchen eines Stoffes, angegeben in mol. Der Stoffmengenanteil sagt, wie viel Prozent aller Teilchen zu einem Stoff gehören.</div>
+      <div><b>die Peakfläche</b>Fläche zwischen Peak und Grundlinie. Sie ist ein Maß für die Menge des Stoffes. Bestimmen der Fläche: integrieren.</div>
+      <div><b>eluieren</b>Aus der Säule austreten. „Der Stoff eluiert nach 3 Minuten.“</div>
+    </div>
+  </section>
+
+  <section class="panel" id="v-grenzen" aria-labelledby="h-lim" hidden>
+    <h2 id="h-lim">Was die Simulation vereinfacht</h2>
+    <ul class="limits">
+      <li>Die Retentionszeiten werden aus Kovats-Retentionsindizes für unpolare Säulen berechnet. Die Werte sind Richtwerte aus der Literatur. Werte mit dem Zeichen <span class="est">geschätzt</span> wurden aus der Siedetemperatur abgeschätzt.</li>
+      <li>Die Temperaturabhängigkeit ist für alle Stoffe gleich angenommen. In echten Messungen verschieben sich Alkene und Alkine bei anderen Temperaturen leicht anders als Alkane.</li>
+      <li>Die Peaks sind ideale Glockenkurven. Echte Peaks können asymmetrisch sein.</li>
+      <li>Detektor: Im vereinfachten Modell gibt jeder Stoff bei gleicher Stoffmenge die gleiche Peakfläche. Im realistischen Modell ist das Signal proportional zur Zahl der C-Atome. Ein echter Detektor braucht für genaue Mengenangaben Korrekturfaktoren für jeden Stoff.</li>
+      <li>Echte Geräte haben noch weitere Einstellungen, zum Beispiel Säulenlänge, Gasfluss und Einspritztemperatur.</li>
+    </ul>
+  </section>
+    </main>
+  </div>
+  </div>
+  <div id="tab-zoom" role="tabpanel" aria-labelledby="tabbtn-zoom" class="tabpanel" hidden>
+    <section class="panel" aria-labelledby="h-zoom">
+      <h2 id="h-zoom">Blick in die Säule: Warum werden die Stoffe der Probe unterschiedlich lange festgehalten?</h2>
+      <p class="note" style="margin-top:0;max-width:80ch">Stark vergrößerter Ausschnitt der Säule für jeden Stoff der aktuellen Probe. Jedes Molekül liegt so auf der stationären Phase, dass es sie möglichst gut berührt. Jede Kugel steht für eine C-Gruppe mit ihren H-Atomen (CH₃, CH₂ oder CH). Alle Moleküle sind im gleichen Maßstab gezeichnet.</p>
+      <div class="zlegend">
+        <span><i class="lg-gas"></i>Trägergas (Helium)</span>
+        <span><i class="lg-ch3"></i>CH₃-Gruppe der stationären Phase (Polydimethylsiloxan, unpolar)</span>
+        <span><i class="lg-bar"></i>Kontaktfläche</span>
+        <span><i class="lg-vdw"></i>Van-der-Waals-Kräfte</span>
+        <span><b>δ− / δ+</b> temporärer und induzierter Dipol</span>
+      </div>
+      <div class="row" style="margin:10px 0"><span class="lbl">Reihenfolge</span>
+        <div class="seg" id="zSort" role="group" aria-label="Reihenfolge der Moleküle" style="margin:0"><button type="button" data-sort="probe" aria-pressed="true">wie in der Probe</button><button type="button" data-sort="rt" aria-pressed="false">nach Retentionszeit</button></div></div>
+      <div class="zgrid" id="zGrid"></div>
+      <p class="callout task" id="zConc" style="margin:14px 0 0"></p>
+    </section>
+    <section class="panel" aria-labelledby="h-zsteps">
+      <h2 id="h-zsteps">So entsteht die Anziehung</h2>
+      <ol class="steps">
+        <li>Die Elektronen in einem Molekül sind ständig in Bewegung. Für einen kurzen Moment sind sie ungleich verteilt. Eine Seite ist dann leicht negativ (δ−), die andere leicht positiv (δ+). Das ist ein <b>temporärer Dipol</b>.</li>
+        <li>Dieser Dipol verschiebt die Elektronen in den CH₃-Gruppen der stationären Phase. Dort entsteht ein <b>induzierter Dipol</b>. δ− und δ+ ziehen sich an: Das sind <b>Van-der-Waals-Kräfte</b>.</li>
+        <li>Jede C-Gruppe, die die stationäre Phase berührt, trägt zur Anziehung bei. <b>Je größer die Kontaktfläche</b> und je mehr Elektronen ein Molekül hat, <b>desto stärker</b> sind die Van-der-Waals-Kräfte.</li>
+        <li>Ein stark angezogenes Molekül bleibt länger an der stationären Phase. Es wird seltener vom Trägergas mitgenommen. Deshalb erreicht es den Detektor später: Seine <b>Retentionszeit ist größer</b>.</li>
+      </ol>
+      <p class="note">Modellgrenzen: Die Moleküle sind zweidimensional gezeichnet. „Kontaktstellen“ zählt, wie viele C-Gruppen in der flach liegenden Lage die Oberfläche berühren. In Wirklichkeit bewegen sich die Moleküle ständig und lösen sich teilweise auch in der stationären Phase.</p>
+    </section>
+  </div>
+  <div id="tab-lit" role="tabpanel" aria-labelledby="tabbtn-lit" class="tabpanel" hidden>
+    <section class="panel" aria-labelledby="h-lit">
+      <h2 id="h-lit">Literaturwerte der Stoffe in der Simulation</h2>
+      <p class="note" style="margin-top:0;max-width:75ch">Siedetemperaturen bei 1013 hPa. Retentionsindex nach Kovats für unpolare Säulen (z. B. Polydimethylsiloxan). Der Retentionsindex legt fest, wo ein Stoff zwischen den unverzweigten Alkanen erscheint: Hexan hat 600, Heptan 700. Ein Stoff mit 650 erscheint also zwischen Hexan und Heptan.</p>
+      <div class="row" style="margin:10px 0">
+        <label for="litSort" class="lbl">Sortieren nach</label>
+        <select id="litSort"><option value="ri">Retentionsindex</option><option value="bp">Siedetemperatur</option><option value="m">molarer Masse</option><option value="g">Stoffklasse</option></select>
+      </div>
+      <div class="tblwrap"><table id="litTable">
+        <thead><tr><th>Stoff</th><th>Stoffklasse</th><th>Summenformel</th><th>Halbstrukturformel</th><th>M in g/mol</th><th>Siedetemperatur</th><th>Retentionsindex (unpolar)</th></tr></thead>
+        <tbody id="litBody"></tbody>
+      </table></div>
+      <h3>Quellen und Hinweise</h3>
+      <ul class="limits">
+        <li>Siedetemperaturen und Retentionsindizes sind Richtwerte, wie sie in Standardwerken stehen, z. B. im <i>CRC Handbook of Chemistry and Physics</i> und im <i>NIST Chemistry WebBook</i> (webbook.nist.gov). Je nach Quelle weichen Siedetemperaturen um etwa 1 °C ab, Retentionsindizes je nach Säule und Temperatur um einige Einheiten.</li>
+        <li>Werte mit <span class="est">geschätzt</span> sind keine Messwerte. Sie wurden aus der Siedetemperatur zwischen den benachbarten unverzweigten Alkanen abgeschätzt.</li>
+        <li>Molare Massen berechnet mit M(C) = 12,011 g/mol und M(H) = 1,008 g/mol.</li>
+        <li>Feuerzeuggas: Anteile nach dem Sicherheitsdatenblatt „300 ml Feuerzeuggas“ (Karl Müller GmbH, 2019): n-Butan 50–100 %, Propan 12,5–25 %, Isobutan 2,5–10 %. Die Simulation verwendet daraus 75 % Butan, 19 % Propan und 6 % Isobutan (Massenanteile) und rechnet sie in Stoffmengenanteile um.</li>
+        <li>Camping-Gas: Das Sicherheitsdatenblatt von Campingaz nennt nur „Kohlenwasserstoffe, C3-4-reich“, im Wesentlichen Butane, Butene und Propan. Die Simulation nimmt ein typisches Butan-Propan-Gemisch an: 53 % Butan, 15 % Isobutan, 30 % Propan und 2 % But-1-en (Massenanteile). Diese Aufteilung ist eine Annahme.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<script>
+(()=>{
+"use strict";
+// ---------- Stoffdaten ----------
+// ri: Kovats-Retentionsindex (unpolare Säule, Richtwert); bp: Siedetemperatur in °C bei 1013 hPa; est: aus Siedetemperatur geschätzt
+const S=[
+ {id:"propan",   g:"n",   n:"Propan",         f:"C₃H₈",  h:"CH₃–CH₂–CH₃", bp:-42.1, ri:300, c:3},
+ {id:"isobutan", g:"iso", n:"2-Methylpropan", f:"C₄H₁₀", h:"CH₃–CH(CH₃)–CH₃", bp:-11.7, ri:366, c:4},
+ {id:"butan",    g:"n",   n:"Butan",          f:"C₄H₁₀", h:"CH₃–CH₂–CH₂–CH₃", bp:-0.5, ri:400, c:4},
+ {id:"neopentan",g:"iso", n:"2,2-Dimethylpropan", f:"C₅H₁₂", h:"C(CH₃)₄", bp:9.5, ri:412, c:5},
+ {id:"isopentan",g:"iso", n:"2-Methylbutan",  f:"C₅H₁₂", h:"CH₃–CH(CH₃)–CH₂–CH₃", bp:27.8, ri:475, c:5},
+ {id:"pentan",   g:"n",   n:"Pentan",         f:"C₅H₁₂", h:"CH₃–(CH₂)₃–CH₃", bp:36.1, ri:500, c:5},
+ {id:"22dmb",    g:"iso", n:"2,2-Dimethylbutan", f:"C₆H₁₄", h:"(CH₃)₃C–CH₂–CH₃", bp:49.7, ri:537, c:6},
+ {id:"23dmb",    g:"iso", n:"2,3-Dimethylbutan", f:"C₆H₁₄", h:"(CH₃)₂CH–CH(CH₃)₂", bp:58.0, ri:567, c:6},
+ {id:"2mp",      g:"iso", n:"2-Methylpentan", f:"C₆H₁₄", h:"(CH₃)₂CH–CH₂–CH₂–CH₃", bp:60.3, ri:570, c:6},
+ {id:"3mp",      g:"iso", n:"3-Methylpentan", f:"C₆H₁₄", h:"CH₃–CH₂–CH(CH₃)–CH₂–CH₃", bp:63.3, ri:585, c:6},
+ {id:"hexan",    g:"n",   n:"Hexan",          f:"C₆H₁₄", h:"CH₃–(CH₂)₄–CH₃", bp:68.7, ri:600, c:6},
+ {id:"2mhx",     g:"iso", n:"2-Methylhexan",  f:"C₇H₁₆", h:"(CH₃)₂CH–(CH₂)₃–CH₃", bp:90.0, ri:667, c:7},
+ {id:"3mhx",     g:"iso", n:"3-Methylhexan",  f:"C₇H₁₆", h:"CH₃–CH₂–CH(CH₃)–(CH₂)₂–CH₃", bp:92.0, ri:676, c:7},
+ {id:"heptan",   g:"n",   n:"Heptan",         f:"C₇H₁₆", h:"CH₃–(CH₂)₅–CH₃", bp:98.4, ri:700, c:7},
+ {id:"isooctan", g:"iso", n:"2,2,4-Trimethylpentan (Isooctan)", f:"C₈H₁₈", h:"(CH₃)₃C–CH₂–CH(CH₃)₂", bp:99.2, ri:690, c:8},
+ {id:"25dmhx",   g:"iso", n:"2,5-Dimethylhexan", f:"C₈H₁₈", h:"(CH₃)₂CH–(CH₂)₂–CH(CH₃)₂", bp:109.1, ri:728, c:8},
+ {id:"3mhp",     g:"iso", n:"3-Methylheptan", f:"C₈H₁₈", h:"CH₃–CH₂–CH(CH₃)–(CH₂)₃–CH₃", bp:118.9, ri:772, c:8},
+ {id:"octan",    g:"n",   n:"Octan",          f:"C₈H₁₈", h:"CH₃–(CH₂)₆–CH₃", bp:125.7, ri:800, c:8},
+ {id:"cpentan",  g:"cyc", n:"Cyclopentan",    f:"C₅H₁₀", h:"Ring aus 5 CH₂-Gruppen", bp:49.3, ri:565, c:5},
+ {id:"chexan",   g:"cyc", n:"Cyclohexan",     f:"C₆H₁₂", h:"Ring aus 6 CH₂-Gruppen", bp:80.7, ri:663, c:6},
+ {id:"buten",    g:"en",  n:"But-1-en",       f:"C₄H₈",  h:"CH₂=CH–CH₂–CH₃", bp:-6.3, ri:386, c:4},
+ {id:"isobuten", g:"en",  n:"2-Methylpropen", f:"C₄H₈",  h:"CH₂=C(CH₃)₂", bp:-6.9, ri:387, c:4},
+ {id:"penten",   g:"en",  n:"Pent-1-en",      f:"C₅H₁₀", h:"CH₂=CH–(CH₂)₂–CH₃", bp:30.0, ri:489, c:5},
+ {id:"e2penten", g:"en",  n:"(E)-Pent-2-en",  f:"C₅H₁₀", h:"CH₃–CH=CH–CH₂–CH₃", bp:36.3, ri:505, c:5},
+ {id:"hexen",    g:"en",  n:"Hex-1-en",       f:"C₆H₁₂", h:"CH₂=CH–(CH₂)₃–CH₃", bp:63.4, ri:589, c:6},
+ {id:"hepten",   g:"en",  n:"Hept-1-en",      f:"C₇H₁₄", h:"CH₂=CH–(CH₂)₄–CH₃", bp:93.6, ri:690, c:7},
+ {id:"octen",    g:"en",  n:"Oct-1-en",       f:"C₈H₁₆", h:"CH₂=CH–(CH₂)₅–CH₃", bp:121.3, ri:790, c:8},
+ {id:"butin",    g:"in",  n:"But-1-in",       f:"C₄H₆",  h:"HC≡C–CH₂–CH₃", bp:8.1, ri:423, c:4, est:1},
+ {id:"but2in",   g:"in",  n:"But-2-in",       f:"C₄H₆",  h:"CH₃–C≡C–CH₃", bp:27.0, ri:475, c:4, est:1},
+ {id:"pentin",   g:"in",  n:"Pent-1-in",      f:"C₅H₈",  h:"HC≡C–(CH₂)₂–CH₃", bp:40.2, ri:513, c:5, est:1},
+ {id:"hexin",    g:"in",  n:"Hex-1-in",       f:"C₆H₁₀", h:"HC≡C–(CH₂)₃–CH₃", bp:71.3, ri:609, c:6, est:1},
+ {id:"heptin",   g:"in",  n:"Hept-1-in",      f:"C₇H₁₂", h:"HC≡C–(CH₂)₄–CH₃", bp:99.7, ri:705, c:7, est:1},
+ {id:"octin",    g:"in",  n:"Oct-1-in",       f:"C₈H₁₄", h:"HC≡C–(CH₂)₅–CH₃", bp:126.3, ri:802, c:8, est:1},
+];
+const GROUPS=[["n","Alkane (unverzweigt)",true],["iso","Alkane (verzweigt, Isomere)",true],["cyc","Cycloalkane",false],["en","Alkene",false],["in","Alkine",false]];
+const PRESETS=[
+ ["Homologe Reihe C4–C8",["butan","pentan","hexan","heptan","octan"]],
+ ["Pentan-Isomere",["neopentan","isopentan","pentan"]],
+ ["Hexan-Isomere",["22dmb","23dmb","2mp","3mp","hexan"]],
+ ["C6: Alkan, Alken, Alkin",["hexan","hexen","hexin","chexan"]],
+ ["Feuerzeuggas",["propan","isobutan","butan"],{propan:19,isobutan:6,butan:75}],
+ ["Camping-Gas",["propan","isobutan","butan","buten"],{propan:30,isobutan:15,butan:53,buten:2}],
+ ["Gemischte Probe",["isobutan","penten","3mp","heptan","isooctan","octen"]],
+];
+const byId=Object.fromEntries(S.map(s=>[s.id,s]));
+const MAX=8;
+
+// ---------- Retentionsmodell ----------
+const TM=1.0;        // Totzeit in min
+const NPLATES=30000; // theoretische Trennstufen
+const lnK5=T=>3130/(T+273.15)-9.307;        // ln k von Pentan (RI 500)
+const lnStep=T=>663/(T+273.15)-1.162;       // ln(Faktor je 100 RI-Einheiten)
+const kOf=(ri,T)=>Math.exp(lnK5(T)+(ri-500)/100*lnStep(T));
+function method(){
+  const iso=document.getElementById("modeIso").checked;
+  const T=+document.getElementById("isoT").value;
+  const fid=document.getElementById("detFid").checked;
+  return iso?{mode:"iso",T,fid}:{mode:"prog",T0:40,hold:2,rate:10,Tmax:200,fid};
+}
+const tempAt=(m,t)=>m.mode==="iso"?m.T:Math.min(m.Tmax,m.T0+Math.max(0,t-m.hold)*m.rate);
+const TCAP=120;
+
+function computeRun(ids,m){
+  const dt=0.002, comps=ids.map((id,i)=>({s:byId[id],idx:i,x:0,tr:null,traj:[0]}));
+  let t=0, step=0;
+  const sampleEvery=25; // alle 0.05 min speichern
+  while(t<TCAP && comps.some(c=>c.tr===null)){
+    const T=tempAt(m,t);
+    for(const c of comps){ if(c.tr!==null) continue;
+      c.x+=dt/(TM*(1+kOf(c.s.ri,T)));
+      if(c.x>=1){c.tr=t+dt;} }
+    t+=dt; step++;
+    if(step%sampleEvery===0) for(const c of comps) c.traj.push(Math.min(c.x,1.2));
+  }
+  for(const c of comps){
+    if(c.tr===null) continue;
+    const kE=kOf(c.s.ri,tempAt(m,c.tr));
+    c.sig=TM*(1+kE)/Math.sqrt(NPLATES);
+    c.area=(m.fid?c.s.c:5)*(amounts[c.s.id]||10);
+  }
+  const ok=comps.filter(c=>c.tr!==null);
+  const tEnd=ok.length?Math.max(...ok.map(c=>c.tr+6*c.sig))+0.6:TCAP;
+  const tAxis=Math.max(3,Math.ceil(tEnd));
+  // Signal auf Raster
+  const G=0.002, n=Math.ceil(tAxis/G)+1, sig=new Float32Array(n);
+  for(const c of ok){ const a=c.area/(c.sig*Math.sqrt(2*Math.PI)); const i0=Math.max(0,Math.floor((c.tr-6*c.sig)/G)), i1=Math.min(n-1,Math.ceil((c.tr+6*c.sig)/G));
+    for(let i=i0;i<=i1;i++){const z=(i*G-c.tr)/c.sig; sig[i]+=a*Math.exp(-.5*z*z);} }
+  let smax=0; for(const v of sig) if(v>smax) smax=v;
+  // Rauschen
+  let seed=7; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647);
+  const noise=new Float32Array(n); for(let i=0;i<n;i++) noise[i]=(rnd()+rnd()+rnd()-1.5)*0.006*smax;
+  // Peaks finden (lokale Maxima > 2 % des Maximums)
+  const peaks=[];
+  for(let i=1;i<n-1;i++) if(sig[i]>sig[i-1]&&sig[i]>=sig[i+1]&&sig[i]>0.003*smax) peaks.push({t:i*G,h:sig[i],comps:[]});
+  for(const c of ok){ let best=null,bd=1e9; for(const p of peaks){const d=Math.abs(p.t-c.tr); if(d<bd){bd=d;best=p;}} if(best) best.comps.push(c); }
+  peaks.forEach((p,i)=>p.no=i+1);
+  // Integrationsgrenzen: Talpunkt zwischen Nachbarpeaks bzw. Rückkehr zur Grundlinie
+  const AREA_SCALE=60; // Signal·min -> mV·s
+  let total=0;
+  peaks.forEach((p,j)=>{
+    const ip=Math.round(p.t/G); let l=ip, r=ip;
+    const lim=0.002*smax;
+    const lo=j>0?Math.round(peaks[j-1].t/G):0, hi=j<peaks.length-1?Math.round(peaks[j+1].t/G):n-1;
+    let vmin=ip; for(let i=ip;i>lo;i--){ if(sig[i]<sig[vmin]) vmin=i; if(sig[i]<lim){vmin=i;break;} } l=vmin;
+    vmin=ip; for(let i=ip;i<hi;i++){ if(sig[i]<sig[vmin]) vmin=i; if(sig[i]<lim){vmin=i;break;} } r=vmin;
+    let a=0; for(let i=l;i<=r;i++) a+=(sig[i]+noise[i])*G;
+    p.l=l*G; p.r=r*G; p.area=a*AREA_SCALE; total+=p.area;
+  });
+  peaks.forEach(p=>p.pct=100*p.area/total);
+  return {comps,ok,tEnd,tAxis,G,sig,noise,smax,peaks,m,unfinished:comps.filter(c=>c.tr===null)};
+}
+
+// ---------- Zustand ----------
+let amounts={};
+let selected=["neopentan","isopentan","pentan","hexan","heptan"];
+let prediction=[...selected];
+let integrated=new Set(), chartGeom=null;
+let run=null, simT=0, running=false, paused=false, speed=1, revealed=false, last=performance.now();
+const colorVar=i=>`--s${(i%8)+1}`;
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const colorOf=id=>css(colorVar(selected.indexOf(id)));
+
+// ---------- UI: Stoffliste ----------
+const $=id=>document.getElementById(id);
+function renderPresets(){
+  $("presets").innerHTML="";
+  PRESETS.forEach(([name,ids,mass])=>{const b=document.createElement("button");b.type="button";b.textContent=name;
+    b.addEventListener("click",()=>{if(running)return;selected=[...ids];prediction=[...ids];amounts={};
+      if(mass){ // Massenanteile in Stoffmengenanteile (in %) umrechnen
+        const n=Object.fromEntries(ids.map(id=>[id,mass[id]/molarMass(byId[id].f)])), sum=Object.values(n).reduce((a,b)=>a+b,0);
+        ids.forEach(id=>amounts[id]=Math.max(1,Math.round(100*n[id]/sum)));
+        showAmounts(true); }
+      syncAll();});$("presets").appendChild(b);});
+}
+let activeGroup="n";
+function renderList(){
+  const showBp=$("bpToggle").checked;
+  // Stoffklassen-Auswahl
+  const seg=$("groupSeg"); seg.innerHTML="";
+  for(const [g,label] of GROUPS){ const n=selected.filter(id=>byId[id].g===g).length;
+    const b=document.createElement("button"); b.type="button"; b.setAttribute("aria-pressed",g===activeGroup?"true":"false");
+    b.innerHTML=`${label}${n?`<span class="cnt">${n}</span>`:""}`; b.addEventListener("click",()=>{activeGroup=g;renderList();}); seg.appendChild(b); }
+  // Liste der aktiven Stoffklasse
+  const box=$("substList"); box.innerHTML="";
+  for(const s of S.filter(s=>s.g===activeGroup)){
+    const l=document.createElement("label"); l.className="subst"; l.htmlFor="cb-"+s.id;
+    const on=selected.includes(s.id);
+    l.innerHTML=`<input type="checkbox" id="cb-${s.id}" ${on?"checked":""} ${running?"disabled":""}>
+      <span class="nm">${s.n}${s.est?'<span class="est" title="Retentionsindex aus Siedetemperatur geschätzt">geschätzt</span>':""}</span>
+      <span class="bp" ${showBp?"":"hidden"}>${fmtBp(s.bp)}</span>
+      <span class="meta">${s.f} · ${s.h}</span>`;
+    l.querySelector("input").addEventListener("change",e=>{
+      if(e.target.checked){ if(selected.length>=MAX){e.target.checked=false;flash(`Höchstens ${MAX} Stoffe.`);return;} selected.push(s.id); prediction.push(s.id);}
+      else { selected=selected.filter(x=>x!==s.id); prediction=prediction.filter(x=>x!==s.id);}
+      syncAll(false);
+    });
+    box.appendChild(l);
+  }
+  // ausgewählte Stoffe als Chips
+  $("selCount").textContent=`(${selected.length} von höchstens ${MAX})`;
+  $("selChips").innerHTML=selected.length?selected.map((id,i)=>`<span class="chip"><span class="dot" style="background:var(${colorVar(i)})">${i+1}</span>${byId[id].n}<button type="button" data-rm="${id}" aria-label="${byId[id].n} entfernen" ${running?"disabled":""}>×</button></span>`).join(""):'<span class="note">Noch keine Stoffe. Wähle ein fertiges Gemisch oder einzelne Stoffe.</span>';
+  $("selChips").querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.rm; selected=selected.filter(x=>x!==id); prediction=prediction.filter(x=>x!==id); syncAll(false);}));
+}
+const fmtBp=v=>(v<0?"−":"")+Math.abs(v).toFixed(1).replace(".",",")+" °C";
+function renderPred(){
+  const ol=$("predList"); ol.innerHTML="";
+  const order=run&&revealed?[...run.ok].sort((a,b)=>a.tr-b.tr).map(c=>c.s.id):null;
+  prediction.forEach((id,i)=>{
+    const s=byId[id], li=document.createElement("li"); const idx=selected.indexOf(id);
+    let mark=""; if(order){const ok=order[i]===id; li.className=ok?"ok":"no"; mark=`<span class="mark ${ok?"ok":"no"}">${ok?"richtig":"Platz "+(order.indexOf(id)+1)}</span>`;}
+    li.innerHTML=`<span class="pos">${i+1}.</span><span class="dot" style="background:var(${colorVar(idx)})">${idx+1}</span><span class="n">${s.n}</span>${mark}
+      <button type="button" aria-label="${s.n} nach oben" ${i===0||running?"disabled":""}>▲</button><button type="button" aria-label="${s.n} nach unten" ${i===prediction.length-1||running?"disabled":""}>▼</button>`;
+    const [up,down]=li.querySelectorAll("button");
+    up.addEventListener("click",()=>{[prediction[i-1],prediction[i]]=[prediction[i],prediction[i-1]];renderPred();});
+    down.addEventListener("click",()=>{[prediction[i+1],prediction[i]]=[prediction[i],prediction[i+1]];renderPred();});
+    ol.appendChild(li);
+  });
+  if(order){ const hits=prediction.filter((id,i)=>order[i]===id).length;
+    $("predResult").innerHTML=`Du hast <b>${hits} von ${order.length}</b> Plätzen richtig vorhergesagt. Erkläre die Abweichungen mit den Van-der-Waals-Kräften.`; }
+  else $("predResult").textContent="";
+}
+function renderResults(){
+  const tb=$("resBody");
+  if(!run){tb.innerHTML=`<tr><td colspan="4" class="note">Die Peaks erscheinen hier, sobald der Detektor sie aufgezeichnet hat.</td></tr>`;return;}
+  const seen=run.peaks.filter(p=>simT>=p.t+0.05);
+  if(!seen.length){tb.innerHTML=`<tr><td colspan="4" class="note">Noch kein Peak aufgezeichnet. Warte, bis der erste Stoff den Detektor erreicht.</td></tr>`;return;}
+  tb.onclick=e=>{const b=e.target.closest(".integ"); if(b){integrated.add(+b.dataset.peak); renderResults();}};
+  tb.innerHTML=seen.map(p=>`<tr><td class="num">${p.no}</td><td class="num">${p.t.toFixed(2).replace(".",",")} min</td><td class="num">${integrated.has(p.no)?`${Math.round(p.area).toLocaleString("de-DE")} mV·s<br><span class="note">${p.pct.toFixed(1).replace(".",",")} % der Gesamtfläche</span>`:'<button type="button" class="integ" data-peak="'+p.no+'">bestimmen</button>'}</td><td>${revealed?p.comps.map(c=>`<span class="chip"><span class="dot" style="background:var(${colorVar(c.idx)})">${c.idx+1}</span>${c.s.n}</span>`).join(" ")+(p.comps.length>1?' <span class="warn">nicht getrennt</span>':""):'<span class="note">?</span>'}</td></tr>`).join("");
+}
+let flashT=0; function flash(msg){$("roState").textContent=msg;flashT=performance.now()+1800;}
+
+
+function renderAmounts(){
+  const box=$("amountList"); const tot=selected.reduce((a,id)=>a+(amounts[id]||10),0);
+  box.innerHTML=selected.map((id,i)=>{const v=amounts[id]||10;return `<label class="amount" for="am-${id}"><span class="dot" style="background:var(${colorVar(i)})">${i+1}</span><span class="nm">${byId[id].n}</span>
+    <input type="range" id="am-${id}" min="1" max="100" step="1" value="${v}" ${running?"disabled":""}><span class="val">${(100*v/tot).toFixed(0)} % der Stoffmenge</span></label>`;}).join("");
+  selected.forEach(id=>$("am-"+id).addEventListener("input",e=>{amounts[id]=+e.target.value;updateAmountLabels();resetRun(false);}));
+}
+function updateAmountLabels(){
+  const tot=selected.reduce((a,id)=>a+(amounts[id]||10),0);
+  selected.forEach(id=>{const el=$("am-"+id); if(el) el.parentElement.querySelector(".val").textContent=`${(100*(amounts[id]||10)/tot).toFixed(0)} % der Stoffmenge`;});
+}
+$("btnEqual").addEventListener("click",()=>{if(running)return;amounts={};renderAmounts();resetRun(false);});
+function syncAll(re=true){ renderList(); renderAmounts(); renderPred(); updateTask(); resetRun(false); }
+
+// ---------- Aufträge ----------
+function updateTask(){
+  let t;
+  if(!run) t=selected.length<2?"Wähle mindestens zwei Stoffe aus.":"Bringe die Stoffe in der Vorhersage in die Reihenfolge, in der sie wohl am Detektor ankommen. Begründe deine Vorhersage mündlich oder schriftlich. Spritze dann die Probe ein.";
+  else if(running && simT<TM) t="Die Probe ist eingespritzt. Beobachte die farbigen Zonen in der Säule: Welche Zone wandert am schnellsten?";
+  else if(running) t="Während du wartest: Welcher Stoff wird am stärksten von der stationären Phase festgehalten? Begründe mit den Van-der-Waals-Kräften.";
+  else t="Die Messung ist fertig. Ordne den Peaks die Stoffe zu. Decke dann die Zuordnung auf und vergleiche mit deiner Vorhersage. Bestimme zum Schluss die Peakflächen durch Anklicken und vergleiche sie mit den Anteilen im Gemisch.";
+  if(run&&run.unfinished.length) t+=` Achtung: ${run.unfinished.map(c=>c.s.n).join(", ")} verlässt die Säule bei dieser Temperatur nicht innerhalb von ${TCAP} Minuten.`;
+  $("taskText").textContent=t;
+}
+
+// ---------- Messablauf ----------
+function resetRun(full=true){
+  integrated=new Set(); run=null; simT=0; running=false; paused=false; revealed=false;
+  $("btnStart").disabled=selected.length<2; $("btnStart").textContent="Probe einspritzen"; $("btnPause").disabled=true; $("btnPause").textContent="Pause";
+  $("btnReveal").disabled=true; $("roState").textContent="bereit"; $("nameToggle").checked=false; $("nameToggle").disabled=true;
+  document.querySelectorAll("input[name=mode],input[name=det],#isoT").forEach(e=>e.disabled=false); $("isoT").disabled=!$("modeIso").checked;
+  renderResults(); if(full){renderList();renderAmounts();renderPred();} updateTask(); initParticles();
+}
+function start(){
+  if(selected.length<2) return;
+  run=computeRun(selected,method()); integrated=new Set(); simT=0; running=true; paused=false; revealed=false;
+  $("btnStart").disabled=true; $("btnPause").disabled=false; $("btnReveal").disabled=true;
+  document.querySelectorAll("input[name=mode],input[name=det],#isoT").forEach(e=>e.disabled=true);
+  renderList(); renderAmounts(); renderPred(); renderResults(); updateTask(); initParticles();
+}
+function finish(){ running=false; $("btnPause").disabled=true; $("btnStart").disabled=false; $("btnStart").textContent="Neue Probe einspritzen"; $("btnReveal").disabled=false; $("roState").textContent="fertig"; renderList(); renderAmounts(); renderPred(); renderResults(); updateTask(); }
+
+$("btnStart").addEventListener("click",start);
+$("btnPause").addEventListener("click",()=>{paused=!paused;$("btnPause").textContent=paused?"Weiter":"Pause";$("roState").textContent=paused?"pausiert":"läuft";});
+$("btnReset").addEventListener("click",()=>resetRun(true));
+$("btnReveal").addEventListener("click",()=>{revealed=true;$("nameToggle").disabled=false;$("nameToggle").checked=true;renderResults();renderPred();});
+document.querySelectorAll(".speed button").forEach(b=>b.addEventListener("click",()=>{speed=+b.dataset.speed;document.querySelectorAll(".speed button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));}));
+document.querySelectorAll("input[name=det]").forEach(r=>r.addEventListener("change",()=>{resetRun(false);updateDetNote();}));
+function updateDetNote(){ $("detNote").innerHTML=$("detFid").checked
+  ? "Der Flammenionisationsdetektor reagiert auf C-Atome. Bei gleicher Stoffmenge liefert ein Stoff mit mehr C-Atomen eine größere Fläche. Die Flächenanteile entsprechen deshalb ungefähr den <b>Massenanteilen</b>, nicht den Stoffmengenanteilen."
+  : "Vereinfachtes Detektormodell: Gleiche Stoffmengen ergeben gleich große Peakflächen. Die Flächenanteile entsprechen den <b>Stoffmengenanteilen</b>."; }
+document.querySelectorAll("input[name=mode]").forEach(r=>r.addEventListener("change",()=>{$("isoT").disabled=!$("modeIso").checked;resetRun(false);}));
+$("isoT").addEventListener("input",()=>{$("isoTv").textContent=$("isoT").value+" °C";resetRun(false);});
+$("bpToggle").addEventListener("change",renderList);
+
+
+// ---------- Canvas-Helfer ----------
+function fit(cv){const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;const w=Math.max(1,Math.round(r.width*d)),h=Math.max(1,Math.round(r.height*d));if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}const ctx=cv.getContext("2d");ctx.setTransform(d,0,0,d,0,0);return {ctx,w:r.width,h:r.height};}
+const cvCol=$("cvCol"), cvChart=$("cvChart");
+
+// Säulenpfad (Serpentine)
+function columnPath(w,h){
+  const lanes=5, x0=w*0.17, x1=w*0.86, top=h*0.2, bot=h*0.86, dy=(bot-top)/(lanes-1);
+  const pts=[]; const push=(x,y)=>pts.push([x,y]);
+  // vom Injektor hinein
+  for(let i=0;i<=10;i++) push(w*0.07+(x0-w*0.07)*i/10, h*0.08+(top-h*0.08)*i/10);
+  for(let l=0;l<lanes;l++){
+    const y=top+l*dy, ltr=l%2===0, xa=ltr?x0:x1, xb=ltr?x1:x0;
+    for(let i=1;i<=40;i++) push(xa+(xb-xa)*i/40,y);
+    if(l<lanes-1){ const cx=xb, cy=y+dy/2, r=dy/2; for(let i=1;i<=16;i++){const a=-Math.PI/2+Math.PI*i/16; push(cx+(ltr?1:-1)*r*Math.cos(a), cy+r*Math.sin(a));} }
+  }
+  const end=pts[pts.length-1]; for(let i=1;i<=10;i++) push(end[0]+(w*0.94-end[0])*i/10, end[1]);
+  const cum=[0]; for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];cum.push(cum[i-1]+Math.hypot(b[0]-a[0],b[1]-a[1]));}
+  const L=cum[cum.length-1]; return {pts,cum:cum.map(c=>c/L),x0,x1,top,bot};
+}
+function posAt(path,f){ f=Math.max(0,Math.min(1,f)); const c=path.cum; let lo=0,hi=c.length-1; while(hi-lo>1){const m=(lo+hi)>>1; if(c[m]<f) lo=m; else hi=m;} const t=(f-c[lo])/((c[hi]-c[lo])||1); const a=path.pts[lo],b=path.pts[hi]; return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]; }
+function xAtTime(c,t){ const k=t/0.05, i=Math.floor(k); if(i>=c.traj.length-1) return c.tr!==null&&t>=c.tr?1.5:c.traj[c.traj.length-1]; return c.traj[i]+(c.traj[i+1]-c.traj[i])*(k-i); }
+
+function drawColumn(){
+  const {ctx,w,h}=fit(cvCol); ctx.clearRect(0,0,w,h);
+  const ink=css("--ink"), muted=css("--muted"), line=css("--line"), oven=css("--oven"), flame=css("--flame");
+  ctx.font=`600 ${Math.max(11,w/70)}px ${css("--f-body")}`;
+  // Ofen
+  const ox=w*0.12, oy=h*0.13, ow=w*0.8, oh=h*0.82;
+  ctx.fillStyle=oven; ctx.strokeStyle=line; ctx.lineWidth=1.5; roundRect(ctx,ox,oy,ow,oh,10); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=muted; ctx.textAlign="right"; ctx.fillText("Säulenofen",ox+ow-10,oy+16);
+  const path=columnPath(w,h);
+  // Säule
+  ctx.lineCap="round"; ctx.lineJoin="round";
+  ctx.strokeStyle=line; ctx.lineWidth=Math.max(9,w/80); strokePath(ctx,path.pts);
+  ctx.strokeStyle=css("--panel"); ctx.lineWidth=Math.max(5,w/130); strokePath(ctx,path.pts);
+  // Injektor
+  ctx.fillStyle=ink; ctx.textAlign="left";
+  const ij=path.pts[0]; ctx.fillStyle=css("--accent"); roundRect(ctx,ij[0]-14,ij[1]-12,28,24,4); ctx.fill();
+  ctx.fillStyle=ink; ctx.fillText("Einspritzblock",4,ij[1]+30);
+  ctx.fillStyle=muted; ctx.fillText("He →",ij[0]+20,ij[1]-4);
+  // Detektor + Flamme
+  const de=path.pts[path.pts.length-1]; const sigNow=run?signalAt(simT)/run.smax:0;
+  ctx.fillStyle=ink; roundRect(ctx,de[0]-10,de[1]-14,24,28,4); ctx.fill();
+  const fh=10+28*Math.min(1,sigNow); ctx.fillStyle=flame; ctx.beginPath(); ctx.moveTo(de[0]-5,de[1]-14); ctx.quadraticCurveTo(de[0]+2,de[1]-14-fh*1.2,de[0]+9,de[1]-14); ctx.fill();
+  ctx.fillStyle=ink; ctx.textAlign="right"; ctx.fillText("Detektor (FID)",w-4,de[1]+32);
+  // Banden
+  if(run){
+    for(const c of run.comps){
+      const x=xAtTime(c,simT); if(x<=0||x>1.02) continue;
+      const sx=Math.max(0.005,2*Math.sqrt(Math.max(x,1e-4)/NPLATES));
+      ctx.fillStyle=css(colorVar(c.idx));
+      for(let k=-30;k<=30;k++){ const f=x+k*sx/10; if(f<0||f>1) continue; const a=Math.exp(-.5*(k/10)**2); ctx.globalAlpha=a*0.9; const [px,py]=posAt(path,f); ctx.beginPath(); ctx.arc(px,py,Math.max(4,w/150),0,7); ctx.fill(); }
+      ctx.globalAlpha=1;
+      const [px,py]=posAt(path,x); ctx.fillStyle=css("--panel"); ctx.beginPath(); ctx.arc(px,py-Math.max(13,w/60),9,0,7); ctx.fill();
+      ctx.fillStyle=css(colorVar(c.idx)); ctx.font=`500 11px ${css("--f-data")}`; ctx.textAlign="center"; ctx.fillText(String(c.idx+1),px,py-Math.max(13,w/60)+4);
+    }
+  }
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function strokePath(ctx,p){ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);for(const q of p)ctx.lineTo(q[0],q[1]);ctx.stroke();}
+function signalAt(t){ if(!run) return 0; const i=Math.round(t/run.G); return i>=0&&i<run.sig.length?run.sig[i]:0; }
+
+function initParticles(){}
+
+// ---------- Chromatogramm ----------
+function drawChart(){
+  const {ctx,w,h}=fit(cvChart); ctx.clearRect(0,0,w,h);
+  const ink=css("--ink"), muted=css("--muted"), grid=css("--grid"), flame=css("--flame");
+  const L=46,R=48,T=26,B=40, pw=w-L-R, ph=h-T-B;
+  const tAxis=run?run.tAxis:10, m=run?run.m:method();
+  const X=t=>L+t/tAxis*pw, Y=v=>T+ph-(v/((run?run.smax:1)*1.15))*ph;
+  // Raster
+  ctx.strokeStyle=grid; ctx.lineWidth=1; ctx.fillStyle=muted; ctx.font=`12px ${css("--f-data")}`; ctx.textAlign="center";
+  const step=niceStep(tAxis);
+  for(let t=0;t<=tAxis+1e-9;t+=step){ctx.beginPath();ctx.moveTo(X(t),T);ctx.lineTo(X(t),T+ph);ctx.stroke();ctx.fillText(fmtNum(t),X(t),T+ph+16);}
+  for(let i=0;i<=4;i++){const y=T+ph*i/4;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(L+pw,y);ctx.stroke();}
+  ctx.fillStyle=ink; ctx.font=`600 13px ${css("--f-body")}`; ctx.fillText("Retentionszeit t_R in min".replace("t_R","tR"),L+pw/2,h-6);
+  ctx.save(); ctx.translate(14,T+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText("Detektorsignal",0,0); ctx.restore();
+  // Temperaturachse rechts
+  const Tmax=m.mode==="iso"?Math.max(100,m.T+20):220, YT=v=>T+ph-(v/Tmax)*ph;
+  ctx.fillStyle=muted; ctx.font=`12px ${css("--f-data")}`; ctx.textAlign="left";
+  for(let v=0;v<=Tmax;v+=m.mode==="iso"?50:50) ctx.fillText(v+" °C",L+pw+6,YT(v)+4);
+  ctx.strokeStyle=flame; ctx.setLineDash([5,4]); ctx.lineWidth=1.5; ctx.beginPath();
+  for(let t=0;t<=tAxis;t+=tAxis/200){const y=YT(tempAt(m,t)); t===0?ctx.moveTo(X(t),y):ctx.lineTo(X(t),y);} ctx.stroke(); ctx.setLineDash([]);
+  // Totzeit
+  ctx.strokeStyle=muted; ctx.beginPath(); ctx.moveTo(X(TM),T+ph); ctx.lineTo(X(TM),T+ph-8); ctx.stroke();
+  ctx.fillStyle=muted; ctx.textAlign="center"; ctx.fillText("tM",X(TM),T+ph-12);
+  // Achsen
+  ctx.strokeStyle=ink; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(L,T); ctx.lineTo(L,T+ph); ctx.lineTo(L+pw,T+ph); ctx.stroke();
+  if(!run){ ctx.fillStyle=muted; ctx.font=`14px ${css("--f-body")}`; ctx.textAlign="center"; ctx.fillText("Noch keine Messung. Spritze eine Probe ein.",L+pw/2,T+ph/2); return; }
+  chartGeom={L,pw,T,ph,tAxis};
+  // integrierte Flächen
+  const iNow=Math.floor(simT/run.G);
+  for(const p of run.peaks){ if(!integrated.has(p.no)||simT<p.t+0.05) continue;
+    const i0=Math.round(p.l/run.G), i1=Math.min(Math.round(p.r/run.G),iNow);
+    ctx.fillStyle=css("--accent"); ctx.globalAlpha=.25; ctx.beginPath(); ctx.moveTo(X(i0*run.G),Y(0));
+    for(let i=i0;i<=i1;i++) ctx.lineTo(X(i*run.G),Y(Math.max(0,run.sig[i]+run.noise[i])));
+    ctx.lineTo(X(i1*run.G),Y(0)); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1;
+    ctx.strokeStyle=css("--accent"); ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(X(i0*run.G),Y(0)); ctx.lineTo(X(i1*run.G),Y(0)); ctx.stroke(); }
+  // Spur
+  ctx.strokeStyle=ink; ctx.lineWidth=1.6; ctx.beginPath();
+  const iEnd=Math.min(run.sig.length-1,Math.floor(simT/run.G)), stepI=Math.max(1,Math.floor(run.sig.length/(pw*2)));
+  for(let i=0;i<=iEnd;i+=stepI){ let v=run.sig[i]; if(stepI>1){for(let j=1;j<stepI&&i+j<=iEnd;j++) v=Math.max(v,run.sig[i+j]);} v+=run.noise[i]; const x=X(i*run.G),y=Y(Math.max(v,-run.smax*0.02)); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+  ctx.stroke();
+  // Schreibstift
+  ctx.fillStyle=flame; ctx.beginPath(); ctx.arc(X(simT),Y(signalAt(simT)+run.noise[Math.min(run.noise.length-1,iEnd)]),4,0,7); ctx.fill();
+  // Peak-Beschriftung
+  const names=$("nameToggle").checked;
+  ctx.font=`600 12px ${css("--f-body")}`; ctx.textAlign="center";
+  const placed=[];
+  for(const p of run.peaks){ if(simT<p.t+0.05) continue; const x=X(p.t), y=Y(p.h);
+    const base=names? p.comps.map(c=>c.s.n).join(" + ") : String(p.no);
+    const txt=integrated.has(p.no)? `${base}: ${p.pct.toFixed(1).replace(".",",")} %` : base, tw=ctx.measureText(txt).width;
+    let ly=Math.max(T+12,y-8);
+    for(let guard=0;guard<8;guard++){ const hit=placed.find(q=>Math.abs(q.x-x)<(q.w+tw)/2+6 && Math.abs(q.y-ly)<14); if(!hit) break; ly=hit.y-15; }
+    ly=Math.max(12,ly); placed.push({x,y:ly,w:tw});
+    ctx.fillStyle=ink; ctx.fillText(txt, x, ly);
+  }
+}
+const niceStep=t=>t<=6?0.5:t<=12?1:t<=30?2:t<=60?5:10;
+const fmtNum=v=>(Math.round(v*10)/10).toString().replace(".",",");
+$("nameToggle").addEventListener("change",drawChart);
+function peakAtEvent(e){
+  if(!run||!chartGeom) return null; const r=cvChart.getBoundingClientRect(), x=e.clientX-r.left;
+  const {L,pw,tAxis}=chartGeom; let best=null,bd=16;
+  for(const p of run.peaks){ if(simT<p.t+0.05) continue; const px=L+p.t/tAxis*pw, d=Math.abs(px-x); if(d<bd){bd=d;best=p;} }
+  return best;
+}
+cvChart.addEventListener("mousemove",e=>{cvChart.style.cursor=peakAtEvent(e)?"pointer":"default";});
+cvChart.addEventListener("click",e=>{const p=peakAtEvent(e); if(!p) return; if(integrated.has(p.no)) integrated.delete(p.no); else integrated.add(p.no); renderResults();});
+$("btnIntAll").addEventListener("click",()=>{ if(!run) return; run.peaks.filter(p=>simT>=p.t+0.05).forEach(p=>integrated.add(p.no)); renderResults(); });
+
+// ---------- Hauptschleife ----------
+function frame(now){
+  const dt=Math.min(0.1,(now-last)/1000); last=now;
+  if(run&&running&&!paused){ simT+=dt*speed/60; if(simT>=run.tEnd){simT=run.tEnd;finish();} }
+  const T=run?tempAt(run.m,simT):tempAt(method(),0);
+  $("roTime").textContent=fmtTime(simT); $("roTemp").textContent=Math.round(T)+" °C";
+  if(running&&!paused&&performance.now()>flashT) $("roState").textContent="läuft";
+  if(run&&running){ const n=run.peaks.filter(p=>simT>=p.t+0.05).length; if(n!==frame.n){frame.n=n;renderResults();} }
+  if(!$("tab-sim").hidden){ if(!$("v-geraet").hidden) drawColumn(); drawChart(); }
+  requestAnimationFrame(frame);
+}
+const fmtTime=t=>{const s=Math.floor(t*60);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");};
+
+
+// ---------- Blick in die Säule (Erklärung) ----------
+// Kohlenstoffgerüst als Kalottenmodell (CH3/CH2/CH-Gruppen als eine Kugel). Das Molekül wird so gedreht,
+// dass möglichst viele Gruppen die stationäre Phase berühren (flach aufliegend).
+function molBeads(s){
+  let beads=[], bonds=[];
+  const zig=n=>{for(let i=0;i<n;i++) beads.push([i*0.87,(i%2)*0.5]); for(let i=0;i<n-1;i++) bonds.push([i,i+1,1]);};
+  if(s.g==="cyc"){ const r=0.5/Math.sin(Math.PI/s.c); for(let i=0;i<s.c;i++){const a=2*Math.PI*i/s.c; beads.push([r*Math.cos(a),0.12*Math.sin(a)]);} for(let i=0;i<s.c;i++) bonds.push([i,(i+1)%s.c,1]); }
+  else if(s.id==="isobuten"){ zig(3); beads.push([0.87,1.5]); bonds.push([1,3,1]); bonds[0][2]=2; }
+  else if(s.g==="iso"){
+    const m=s.n.match(/^(\d(?:,\d)*)-(?:Di|Tri|Tetra)?methyl/i); const loc=m?m[1].split(",").map(Number):[];
+    zig(s.c-loc.length); const used={};
+    loc.forEach(L=>{const i=L-1,b=beads[i],first=!used[i]; used[i]=1; const up=b[1]===0; const dir=(up===first)?-1:1; beads.push([b[0],b[1]+dir*1.0]); bonds.push([i,beads.length-1,1]);});
+  } else { zig(s.c); const m=s.n.match(/-(\d)-(en|in)$/); if(m) bonds[+m[1]-1][2]=m[2]==="en"?2:3; }
+  return {beads,bonds};
+}
+const CONTACT=0.55;
+function lieFlat(s){
+  const {beads,bonds}=molBeads(s); let best=null;
+  for(let d=0;d<180;d+=3){ const a=d*Math.PI/180, c=Math.cos(a), sn=Math.sin(a);
+    const P=beads.map(b=>[b[0]*c-b[1]*sn,b[0]*sn+b[1]*c]); const maxY=Math.max(...P.map(p=>p[1]));
+    const touch=P.map(p=>p[1]>=maxY-CONTACT); const n=touch.filter(Boolean).length;
+    const height=maxY-Math.min(...P.map(p=>p[1]));
+    if(!best||n>best.n||(n===best.n&&height<best.height)) best={P,touch,n,maxY,height};
+  }
+  const cx=(Math.min(...best.P.map(p=>p[0]))+Math.max(...best.P.map(p=>p[0])))/2;
+  best.P=best.P.map(p=>[p[0]-cx,p[1]-best.maxY]); best.bonds=bonds; return best;
+}
+const electrons=s=>{const m=s.f.match(/C([₀-₉]*)H([₀-₉]*)/);const num=x=>x?+[...x].map(ch=>"₀₁₂₃₄₅₆₇₈₉".indexOf(ch)).join(""):1;return 6*num(m[1])+num(m[2]);};
+const ZT=40;
+function drawZoom(cv,s,col,sc){
+  const {ctx,w,h}=fit(cv); ctx.clearRect(0,0,w,h);
+  const ink=css("--ink"), muted=css("--muted"), line=css("--line"), film=css("--film"), panel=css("--panel");
+  const flat=lieFlat(s), R=sc*0.62;
+  const surf=h*0.66, cx=w/2;
+  ctx.fillStyle=line; for(let i=0;i<14;i++){const x=(i*97)%w, y=30+(i*53)%(surf-R*3-40); ctx.beginPath(); ctx.arc(x,y,2.5,0,7); ctx.fill();}
+  // stationäre Phase: PDMS-Kette
+  ctx.fillStyle=film; ctx.globalAlpha=.45; ctx.fillRect(0,surf,w,h-surf-14); ctx.globalAlpha=1;
+  ctx.fillStyle=line; ctx.fillRect(0,h-14,w,14);
+  const bb=surf+R*1.15+8, step=sc*0.95; ctx.strokeStyle=muted; ctx.lineWidth=1.5;
+  ctx.beginPath(); for(let x=-step,i=0;x<w+step;x+=step/2,i++){ const y=bb+(i%2?5:-5); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);} ctx.stroke();
+  const bumps=[];
+  for(let x=-step,i=0;x<w+step;x+=step,i++){ const y=bb-5;
+    ctx.strokeStyle=muted; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,surf+R*0.55); ctx.stroke();
+    ctx.fillStyle=css("--soft"); ctx.strokeStyle=muted; ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(x,surf+R*0.42,R*0.42,0,7); ctx.fill(); ctx.stroke(); ctx.lineWidth=1.5; bumps.push(x); }
+  // Molekül aufliegend
+  const P=flat.P.map(p=>[cx+p[0]*sc, surf-R-1+p[1]*sc]);
+  // Kontaktfläche
+  const tx=P.filter((_,i)=>flat.touch[i]).map(p=>p[0]); const xa=Math.min(...tx)-R, xb=Math.max(...tx)+R;
+  ctx.fillStyle=col; ctx.globalAlpha=.18; ctx.fillRect(xa,surf-2,xb-xa,R*0.9); ctx.globalAlpha=.9; ctx.fillRect(xa,surf-3,xb-xa,5); ctx.globalAlpha=1;
+  // VdW-Linien
+  ctx.setLineDash([3,3]); ctx.lineWidth=1.6; ctx.strokeStyle=col;
+  P.forEach((p,i)=>{ if(!flat.touch[i]) return; const nb=bumps.reduce((a,b)=>Math.abs(b-p[0])<Math.abs(a-p[0])?b:a);
+    ctx.beginPath(); ctx.moveTo(p[0],p[1]+R*0.7); ctx.lineTo(nb,surf+R*0.1); ctx.stroke(); });
+  ctx.setLineDash([]);
+  // Kugeln
+  const order=P.map((p,i)=>i).sort((a,b)=>P[a][1]-P[b][1]);
+  for(const i of order){ const p=P[i]; ctx.fillStyle=col; ctx.globalAlpha=flat.touch[i]?1:.75; ctx.beginPath(); ctx.arc(p[0],p[1],R,0,7); ctx.fill(); ctx.globalAlpha=1;
+    ctx.strokeStyle=panel; ctx.lineWidth=1.5; ctx.stroke(); }
+  for(const [a,b,o] of flat.bonds){ if(o<2) continue; const A=P[a],B=P[b]; ctx.strokeStyle=panel; ctx.lineWidth=2;
+    for(let k=0;k<o;k++){const off=(k-(o-1)/2)*4; ctx.beginPath(); ctx.moveTo(A[0],A[1]+off); ctx.lineTo(B[0],B[1]+off); ctx.stroke();} }
+  // δ-Beschriftung an einem Kontakt
+  const fi=P.findIndex((_,i)=>flat.touch[i]); if(fi>=0){ const p=P[fi]; ctx.font=`700 12px ${css("--f-body")}`; ctx.fillStyle=ink; ctx.textAlign="right";
+    ctx.fillText("δ−",p[0]-R*0.75,p[1]+R*0.35); ctx.fillText("δ+",p[0]-R*0.6,surf+R*1.05); }
+  return flat;
+}
+let zSort="probe";
+function fillZoomSelects(){
+  document.querySelectorAll("#zSort button").forEach(b=>b.addEventListener("click",()=>{zSort=b.dataset.sort;document.querySelectorAll("#zSort button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));renderZoom();}));
+}
+function zoomFacts(s,flat,rank){
+  const k=kOf(s.ri,ZT), pct=Math.round(100*k/(1+k));
+  return `<dl class="facts">
+    <dt>Kontaktstellen</dt><dd><b>${flat.n}</b> von ${flat.P.length} C-Gruppen</dd>
+    <dt>Elektronen</dt><dd>${electrons(s)}</dd>
+    ${$("bpToggle").checked?`<dt>Siedetemperatur</dt><dd class="num">${fmtBp(s.bp)}</dd>`:""}
+    <dt>Festgehalten (${ZT} °C)</dt><dd><span class="bar"><span style="width:${pct}%"></span></span> ${pct} % der Zeit</dd>
+    <dt>Im Chromatogramm</dt><dd><b>${rank}.</b> Peak</dd></dl>`;
+}
+function renderZoom(){
+  if($("tab-zoom").hidden) return;
+  const grid=$("zGrid");
+  if(selected.length===0){ grid.innerHTML='<p class="note">Die Probe ist leer. Stelle im Bereich „Simulation“ ein Gemisch zusammen.</p>'; $("zConc").textContent=""; return; }
+  const items=selected.map((id,idx)=>({s:byId[id],idx,flat:lieFlat(byId[id]),k:kOf(byId[id].ri,ZT)}));
+  const byK=[...items].sort((a,b)=>a.k-b.k); byK.forEach((it,i)=>it.rank=i+1);
+  const list=zSort==="rt"?byK:items;
+  grid.innerHTML=list.map(it=>`<article class="zcard"><div class="zhead"><span class="dot" style="background:var(${colorVar(it.idx)})">${it.idx+1}</span><b>${it.s.n}</b><span class="num note" style="margin:0">${it.s.h}</span></div>
+    <canvas id="cvZ-${it.s.id}" class="cv-zoom" role="img" aria-label="${it.s.n} liegt auf der stationären Phase. ${it.flat.n} C-Gruppen berühren die Oberfläche."></canvas>${zoomFacts(it.s,it.flat,it.rank)}</article>`).join("");
+  // gemeinsamer Maßstab für alle Karten, damit die Größen vergleichbar sind
+  const cw=grid.querySelector("canvas").getBoundingClientRect().width;
+  const span=Math.max(...items.map(it=>Math.max(...it.flat.P.map(p=>Math.abs(p[0])))*2+1.6),5);
+  const sc=Math.max(10,Math.min(30,(cw-30)/span));
+  list.forEach(it=>drawZoom($("cvZ-"+it.s.id),it.s,css(colorVar(it.idx)),sc));
+  // Zusammenfassung
+  const order=byK.map(it=>it.s.n).join(" → ");
+  const mism=byK.some((it,i)=>i>0 && it.flat.n<byK[i-1].flat.n && electrons(it.s)<=electrons(byK[i-1].s));
+  let t=`Reihenfolge im Chromatogramm: ${order}. In dieser Reihenfolge werden die Moleküle immer stärker von der stationären Phase festgehalten.`;
+  t+= mism? " Nicht überall passt die Zahl der Kontaktstellen zur Reihenfolge. Dort spielen weitere Einflüsse eine Rolle, zum Beispiel starre Ringe oder Mehrfachbindungen." : " Moleküle mit mehr Kontaktstellen und mehr Elektronen erfahren stärkere Van-der-Waals-Kräfte und erscheinen später.";
+  $("zConc").textContent=t;
+}
+
+// ---------- Bereiche ein- und ausblenden ----------
+const VIEWS={probe:"v-probe",geraet:"v-geraet",auftrag:"v-auftrag",saetze:"v-saetze",woerter:"v-woerter",grenzen:"v-grenzen"};
+let viewState={probe:true,geraet:true,auftrag:true,saetze:false,woerter:false,grenzen:false};
+try{ const v=JSON.parse(localStorage.getItem("gc-views")||"null"); if(v) viewState={...viewState,...v}; }catch(e){}
+function applyViews(){
+  for(const [k,id] of Object.entries(VIEWS)){ $(id).hidden=!viewState[k]; }
+  document.querySelectorAll(".viewbar .pill").forEach(b=>b.setAttribute("aria-pressed",viewState[b.dataset.view]?"true":"false"));
+  $("simGrid").classList.toggle("noprobe",!viewState.probe);
+  $("devgrid").classList.toggle("nogc",!viewState.geraet);
+  try{ localStorage.setItem("gc-views",JSON.stringify(viewState)); }catch(e){}
+}
+document.querySelectorAll(".viewbar .pill").forEach(b=>b.addEventListener("click",()=>{viewState[b.dataset.view]=!viewState[b.dataset.view];applyViews();}));
+function showAmounts(on){ $("amountWrap").hidden=!on; $("btnAmounts").setAttribute("aria-pressed",on?"true":"false"); }
+$("btnAmounts").addEventListener("click",()=>showAmounts($("amountWrap").hidden));
+applyViews();
+
+// ---------- Reiter & Literaturwerte ----------
+const GNAME={n:"Alkan",iso:"Alkan (verzweigt)",cyc:"Cycloalkan",en:"Alken",in:"Alkin"};
+const SUB="₀₁₂₃₄₅₆₇₈₉";
+function molarMass(f){const m=f.match(/C([₀-₉]*)H([₀-₉]*)/);const num=x=>x?+[...x].map(ch=>SUB.indexOf(ch)).join(""):1;return num(m[1])*12.011+num(m[2])*1.008;}
+function renderLit(){
+  const key=$("litSort").value, order=["n","iso","cyc","en","in"];
+  const rows=[...S].sort((a,b)=>key==="ri"?a.ri-b.ri:key==="bp"?a.bp-b.bp:key==="m"?molarMass(a.f)-molarMass(b.f)||a.ri-b.ri:order.indexOf(a.g)-order.indexOf(b.g)||a.ri-b.ri);
+  $("litBody").innerHTML=rows.map(s=>`<tr><td><b>${s.n}</b></td><td>${GNAME[s.g]}</td><td class="num">${s.f}</td><td class="num">${s.h}</td><td class="num">${molarMass(s.f).toFixed(2).replace(".",",")}</td><td class="num">${fmtBp(s.bp)}</td><td class="num">${s.ri}${s.est?' <span class="est">geschätzt</span>':""}</td></tr>`).join("");
+}
+$("litSort").addEventListener("change",renderLit);
+function showTab(name){
+  ["sim","zoom","lit"].forEach(n=>{$("tab-"+n).hidden=n!==name;$("tabbtn-"+n).setAttribute("aria-selected",n===name?"true":"false");});
+  if(name==="lit") renderLit();
+  if(name==="zoom") renderZoom();
+}
+$("tabbtn-sim").addEventListener("click",()=>showTab("sim"));
+$("tabbtn-lit").addEventListener("click",()=>showTab("lit"));
+$("tabbtn-zoom").addEventListener("click",()=>showTab("zoom"));
+window.addEventListener("resize",()=>renderZoom());
+fillZoomSelects();
+if(location.hash==="#literatur") showTab("lit");
+
+updateDetNote(); renderPresets(); renderList(); renderAmounts(); renderPred(); resetRun(false); updateTask();
+requestAnimationFrame(t=>{last=t;frame(t);});
+})();
+</script>
+
+</body></html>
